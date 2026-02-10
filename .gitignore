@@ -11,3 +11,7 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+data/
+*.db
+*.sqlite3
+

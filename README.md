@@ -44,6 +44,18 @@ http://localhost:8000/docs
 |------|------|----------|
 | 后端框架 | FastAPI | 0.109+ |
 | 编程语言 | Python | 3.11+ |
-| 数据存储 | Redis | 7.2+ |
+| 数据存储 | Redis / SQLite | 7.2+ (Redis) |
 | 容器化 | Docker Compose | - |
 | 测试框架 | Pytest + HTTPX | - |
+
+## ⚙️ 配置说明
+
+可以通过环境变量或 `.env` 文件配置存储后端：
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| STORAGE_TYPE | `local` | `local` (SQLite) 或 `redis` |
+| LOCAL_STORAGE_PATH | `data/storage.db` | SQLite 数据库文件路径 (仅 local 模式) |
+| REDIS_HOST | `localhost` | Redis 主机地址 (仅 redis 模式) |
+| REDIS_PORT | `6379` | Redis 端口 (仅 redis 模式) |
+

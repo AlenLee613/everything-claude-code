@@ -1,13 +1,13 @@
 from typing import Callable, Awaitable
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
-from app.services.redis_client import redis_client
+from app.services.storage import get_storage
 
 async def dispatch(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
     """
     Middleware to handle ephemeral key validation.
     
-    Checks for 'X-API-Key' header, validates existence in Redis,
+    Checks for 'X-API-Key' header, validates existence in storage,
     and manages request quotas.
     
     Args:
@@ -37,9 +37,9 @@ async def dispatch(request: Request, call_next: Callable[[Request], Awaitable[Re
             }
         )
     
-    # 3. Check Redis existence
-    remaining_key = f"ephem:{api_key}:remaining"
-    if not redis_client.exists(remaining_key):
+    # 3. Check Storage existence
+    storage = get_storage()
+    if not storage.exists(api_key):
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content={
@@ -49,15 +49,13 @@ async def dispatch(request: Request, call_next: Callable[[Request], Awaitable[Re
         )
     
     # 4. Atomic Decr
-    remaining = redis_client.decr(remaining_key)
+    remaining = storage.decrement_remaining(api_key)
     
     # 5. Check if limit exceeded (remaining < 0)
-    # Note: If remaining was 0 BEFORE decr, it becomes -1. 
-    # If max_requests was 1: Set to 1. Decr -> 0. (Valid, count 1 used).
-    # If max_requests was 1: ... Next Decr -> -1. (Invalid).
-    # So if remaining < 0, it is invalid.
     if remaining < 0:
-        redis_client.delete(f"ephem:{api_key}:info", remaining_key)
+        # Only cleanup if we are sure it's dead, but storage logic handles delete mostly.
+        # Explicit delete is fine.
+        storage.delete_key(api_key)
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content={
