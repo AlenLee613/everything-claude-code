@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     # Storage Configuration
     STORAGE_TYPE: str = "local"  # Options: "redis", "local"
     LOCAL_STORAGE_PATH: str = "data/storage.db"
+    
+    # Security
+    TRUSTED_PROXIES: str = ""  # Comma separated list of trusted proxy IPs
 
     model_config = SettingsConfigDict(env_file=".env")
 

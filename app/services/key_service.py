@@ -1,7 +1,7 @@
 import uuid
 import datetime
 from app.services.storage import get_storage
-from app.models import EphemeralKeyCreate, EphemeralKeyResponse, EphemeralKeyStatus
+from app.models import EphemeralKeyCreate, EphemeralKeyResponse, EphemeralKeyStatus, IpPolicy
 from app.exceptions import KeyInvalidException
 
 class KeyService:
@@ -74,3 +74,26 @@ class KeyService:
             expire_at=expire_at,
             remaining=remaining_count
         )
+
+    @staticmethod
+    def set_ip_policy(key: str, policy: IpPolicy):
+        """
+        Set IP policy for an ephemeral key.
+        """
+        storage = get_storage()
+        if not storage.get_key_status(key):
+            raise KeyInvalidException()
+            
+        storage.update_key_policy(key, policy.model_dump())
+
+    @staticmethod
+    def set_rpm(key: str, rpm: int):
+        """
+        Set RPM limit for an ephemeral key.
+        """
+        storage = get_storage()
+        if not storage.get_key_status(key):
+            raise KeyInvalidException()
+        
+        storage.set_key_rpm(key, rpm)
+

@@ -15,6 +15,13 @@ class EphemeralKeyStatus(BaseModel):
     expire_at: datetime
     remaining: int
 
+class IpPolicy(BaseModel):
+    mode: str = Field(..., pattern="^(whitelist|blacklist)$")
+    ips: list[str] = Field(..., description="List of CIDR IPs")
+
+class RPMRequest(BaseModel):
+    rpm: int = Field(..., ge=1, description="Requests per minute limit")
+
 class ErrorResponse(BaseModel):
     error_code: str
     message: str

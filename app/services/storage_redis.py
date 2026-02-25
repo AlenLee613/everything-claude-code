@@ -70,3 +70,82 @@ class RedisStorage(StorageBackend):
     def exists(self, key_id: str) -> bool:
         # We check the 'remaining' key primarily as it's used for rate limiting
         return bool(self.client.exists(f"ephem:{key_id}:remaining"))
+
+    def update_key_policy(self, key_id: str, policy: Dict[str, Any]) -> None:
+        info_key = f"ephem:{key_id}:info"
+        # Serialize policy dict to JSON string for storage in HSET or as separate field
+        import json
+        policy_json = json.dumps(policy)
+        self.client.hset(info_key, "ip_policy", policy_json)
+
+    def log_usage(self, key_id: str, usage_data: Dict[str, Any]) -> None:
+        """
+        Stub implementation for Redis.
+        """
+        # For simplicity, we can log to a list or just ignore if not critical for this demo,
+        # but to satisfy interface, we do nothing or basic logging.
+        # Ideally, we would push to a stream or list.
+        # But this feature request specifically asked for CSV export which implies querying.
+        # Querying range in Redis is doable with Sorted Set (ZADD usage_logs <timestamp> <json>).
+        try:
+             import json
+             usage_data["key_id"] = key_id # Add key_id to the payload
+             self.client.zadd("usage_logs", {json.dumps(usage_data): usage_data["timestamp"]})
+        except Exception:
+             pass
+
+    def get_usage_logs(self, start_ts: float, end_ts: float) -> list[Dict[str, Any]]:
+        try:
+            import json
+            # ZRANGEBYSCORE usage_logs start end
+            logs = self.client.zrangebyscore("usage_logs", start_ts, end_ts)
+            return [json.loads(log) for log in logs]
+        except Exception:
+            return []
+
+    def set_key_rpm(self, key_id: str, rpm: int) -> None:
+        info = self.get_key_status(key_id)
+        if not info:
+             return
+             
+        info_key = f"ephem:{key_id}:info"
+        self.client.hset(info_key, "rpm", str(rpm))
+
+    def check_rate_limit(self, key_id: str, rpm: int) -> bool:
+        """
+        Rate limit using Redis sliding window (ZSET).
+        """
+        import time
+        now = time.time()
+        window_start = now - 60
+        req_key = f"ephem:{key_id}:requests"
+
+        pipe = self.client.pipeline()
+        pipe.zremrangebyscore(req_key, 0, window_start) # Clean old
+        pipe.zcard(req_key) # Count existing
+        pipe.zadd(req_key, {str(now): now}) # Add current
+        pipe.expire(req_key, 60) # Set expiry
+        
+        _, current_count, _ = pipe.execute()
+        
+        # current_count is what was there BEFORE we added the new one.
+        if current_count >= rpm:
+            # We already had `rpm` requests in the window. Adding one more exceeds limit.
+            # We should remove the one we just added since it's rejected.
+            self.client.zrem(req_key, str(now))
+            return False
+            
+        return True
+
+    def log_attribution(self, log_entry: Dict[str, Any]) -> None:
+        """
+        Stub implementation for attribution logging in Redis.
+        """
+        pass
+
+    def get_attribution_logs(self, filters: Dict[str, Any], page: int = 1, page_size: int = 20) -> Tuple[list[Dict[str, Any]], int]:
+        """
+        Stub implementation for attribution logs retrieval in Redis.
+        """
+        return [], 0
+
