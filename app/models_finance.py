@@ -161,3 +161,100 @@ class SchedulerStatus(BaseModel):
     running: bool
     jobs: list[dict]
     next_run_times: dict[str, Optional[str]]
+
+
+# ---------------------------------------------------------------------------
+# Competitor analysis (prd-competitor SKILL)
+# ---------------------------------------------------------------------------
+
+class ProductCategory(str, Enum):
+    PROJECT_MANAGEMENT = "project_management"
+    NOTE_TAKING = "note_taking"
+    ANTIVIRUS = "antivirus"
+    CRM = "crm"
+    BI_ANALYTICS = "bi_analytics"
+
+
+class CompetitorPricingTier(BaseModel):
+    name: str = Field(..., description="套餐名称，如 Free / Pro / Enterprise")
+    price: str = Field(..., description="价格，如 $0 / $10/用户/月 / 自定义")
+    key_features: list[str] = Field(default_factory=list, description="该套餐核心功能")
+
+
+class CompetitorProfile(BaseModel):
+    name: str
+    founded_year: Optional[int] = None
+    funding: Optional[str] = None
+    employee_range: Optional[str] = None
+    website: Optional[str] = None
+    target_customers: str = Field("", description="目标客户描述")
+    customer_segments: list[str] = Field(default_factory=list, description="客户细分，如 enterprise / SMB / consumer")
+    core_features: list[str] = Field(default_factory=list)
+    advanced_features: list[str] = Field(default_factory=list)
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+    pricing_tiers: list[CompetitorPricingTier] = Field(default_factory=list)
+    market_positioning: str = Field("", description="市场定位声明")
+    value_proposition: str = Field("", description="核心价值主张")
+    gtm_strategy: str = Field("", description="GTM 策略，如 product-led / sales-led / self-serve")
+    g2_rating: Optional[float] = Field(None, ge=0.0, le=5.0, description="G2 评分")
+    g2_review_count: Optional[int] = None
+    common_praises: list[str] = Field(default_factory=list)
+    common_complaints: list[str] = Field(default_factory=list)
+
+
+class FeatureComparisonRow(BaseModel):
+    feature: str
+    category: str = Field(..., description="功能类别，如 核心功能 / 高级功能 / 用户体验 / 集成生态 / 定价")
+    competitor_support: dict[str, str] = Field(
+        default_factory=dict,
+        description="各竞品支持情况：✅ 支持 | ❌ 不支持 | ⚠️ 部分支持",
+    )
+
+
+class MarketGap(BaseModel):
+    need: str = Field(..., description="未满足的市场需求")
+    demand_level: str = Field(..., description="需求强度：高 / 中 / 低")
+    competitor_coverage: str = Field(..., description="竞品覆盖：❌ 无 / ⚠️ 部分 / ✅ 有")
+    opportunity_size: str = Field(..., description="机会大小：大 / 中 / 小")
+
+
+class CompetitorSwot(BaseModel):
+    competitor_name: str
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+    opportunities: list[str] = Field(default_factory=list)
+    threats: list[str] = Field(default_factory=list)
+
+
+class StrategicInsights(BaseModel):
+    positioning_statement: str = Field("", description="建议产品定位声明")
+    primary_target: str = Field("", description="首要目标客户")
+    secondary_target: str = Field("", description="次要目标客户")
+    core_value_prop: str = Field("", description="核心价值主张（一句话）")
+    differentiation: str = Field("", description="与竞品的差异化")
+    p0_features: list[str] = Field(default_factory=list, description="MVP 必备功能 (P0)")
+    p1_features: list[str] = Field(default_factory=list, description="V1.0 重要功能 (P1)")
+    p2_features: list[str] = Field(default_factory=list, description="未来规划功能 (P2)")
+    pricing_recommendation: str = Field("", description="定价策略建议")
+    gtm_recommendation: str = Field("", description="市场进入策略建议")
+
+
+class CompetitorAnalysisRequest(BaseModel):
+    product_category: ProductCategory
+    target_product_name: Optional[str] = Field(None, description="目标产品名称（可选，用于定制化建议）")
+
+
+class CompetitorAnalysisResult(BaseModel):
+    product_category: ProductCategory
+    target_product_name: Optional[str] = None
+    generated_at: datetime
+    market_size_usd_billion: Optional[float] = Field(None, description="市场规模（十亿美元）")
+    market_growth_rate_pct: Optional[float] = Field(None, description="年增长率（%）")
+    market_leaders: list[str] = Field(default_factory=list, description="市场领导者")
+    competitors: list[CompetitorProfile] = Field(default_factory=list)
+    feature_comparison: list[FeatureComparisonRow] = Field(default_factory=list)
+    market_gaps: list[MarketGap] = Field(default_factory=list)
+    swot_analyses: list[CompetitorSwot] = Field(default_factory=list)
+    strategic_insights: StrategicInsights = Field(default_factory=StrategicInsights)
+    research_sources: list[str] = Field(default_factory=list)

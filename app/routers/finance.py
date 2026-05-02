@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, status
 from app.models_finance import (
+    CompetitorAnalysisRequest,
+    CompetitorAnalysisResult,
     DataSourcesResponse,
     Industry,
     IndustryAnalysis,
@@ -24,6 +26,7 @@ from app.models_finance import (
     TechComparisonRequest,
     TechComparisonResult,
 )
+from app.services.competitor_analysis import analyse_competitors
 from app.services.data_sources import ALL_SOURCES, get_sources_for_industry
 from app.services.finance_service import FinanceService
 from app.services.scheduler import (
@@ -87,6 +90,26 @@ def technology_comparison(request: TechComparisonRequest) -> TechComparisonResul
     典型对比示例：`AI大模型` vs `传统BI`（finance）、`固态电池` vs `液态锂电池`（energy）
     """
     return analyse_technologies(request)
+
+
+@router.post(
+    "/competitor-analysis",
+    response_model=CompetitorAnalysisResult,
+    status_code=status.HTTP_200_OK,
+    summary="竞品分析（prd-competitor SKILL）",
+)
+def competitor_analysis(request: CompetitorAnalysisRequest) -> CompetitorAnalysisResult:
+    """
+    对指定产品类别进行深度竞品分析，输出：
+    - **竞品详细档案**（目标客户、核心功能、优劣势、定价、GTM 策略、用户评价）
+    - **功能对比矩阵**（各竞品功能支持情况）
+    - **市场缺口分析**（未被满足的用户需求）
+    - **SWOT 分析**（头部竞品）
+    - **战略建议**（定位、定价、MVP 功能优先级、GTM 策略）
+
+    支持产品类别：`project_management` | `note_taking` | `antivirus` | `crm` | `bi_analytics`
+    """
+    return analyse_competitors(request)
 
 
 @router.post(
