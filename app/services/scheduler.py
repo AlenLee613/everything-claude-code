@@ -29,7 +29,7 @@ def _refresh_industry(industry: Industry) -> None:
             industry=industry.value,
             rows=data.get("rows", "stub"),
         )
-    except Exception as exc:  # noqa: BLE001
+    except (ImportError, ConnectionError, OSError, ValueError) as exc:
         logger.error("Scheduled refresh failed", industry=industry.value, error=str(exc))
 
 

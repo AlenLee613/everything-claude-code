@@ -217,7 +217,7 @@ def _try_akshare_market_data(industry: Industry) -> dict[str, Any] | None:
         df = ak.stock_sector_spot(indicator="涨跌幅")
         logger.info("akshare sector data fetched ({} rows)", len(df))
         return {"source": "akshare", "rows": len(df)}
-    except Exception as exc:  # noqa: BLE001
+    except (ImportError, ConnectionError, KeyError) as exc:
         logger.warning("akshare fetch failed: {}", exc)
         return None
 

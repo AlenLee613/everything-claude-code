@@ -189,6 +189,8 @@ _TECH_PROFILES: dict[str, dict[str, Any]] = {
     },
 }
 
+_MAX_ADVANTAGE_PREVIEW_LENGTH = 30
+
 _DEFAULT_PROFILE: dict[str, Any] = {
     "gartner_phase": GartnerPhase.INNOVATION_TRIGGER,
     "gartner_description": "该技术尚处于创新萌芽阶段，市场认知度低，商业化路径有待验证。",
@@ -231,7 +233,7 @@ def analyse_technologies(request: TechComparisonRequest) -> TechComparisonResult
     profile = _lookup_profile(request.new_tech.name)
     legacy_pros = _lookup_legacy_pros(request.legacy_tech.name)
     legacy_cons = [
-        f"相对新技术：{adv[:30]}…方面存在差距"
+        f"相对新技术：{adv[:_MAX_ADVANTAGE_PREVIEW_LENGTH]}…方面存在差距"
         for adv in profile["advantages"][:3]
     ]
 
