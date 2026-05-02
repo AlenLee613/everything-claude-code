@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -7,14 +9,24 @@ import sys
 from app.routers import keys, demo
 from app.routers.usage import router as usage_router
 from app.routers.attribution import router as attribution_router
+from app.routers.finance import router as finance_router
 from app.middleware.auth import dispatch
+from app.services.scheduler import start_scheduler, stop_scheduler
 
 # Configure Loguru for JSON logging
 logger.remove()
 logger.add(sys.stderr, format="{message}", serialize=True, level="INFO")
 logger.add("logs/app.log", rotation="10 MB", retention="10 days", level="INFO", serialize=True)
 
-app = FastAPI(title="Ephemeral Key API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+    stop_scheduler()
+
+
+app = FastAPI(title="Ephemeral Key API", lifespan=lifespan)
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -30,6 +42,7 @@ app.include_router(keys.router)
 app.include_router(demo.router)
 app.include_router(usage_router)
 app.include_router(attribution_router)
+app.include_router(finance_router)
 
 @app.get("/health")
 def health_check():

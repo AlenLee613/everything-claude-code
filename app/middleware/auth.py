@@ -43,8 +43,12 @@ async def dispatch(request: Request, call_next: Callable[[Request], Awaitable[Re
             status_code = response.status_code
             return response
 
-        # 2. Exclude Usage Export and Attribution
-        if path.startswith("/api/usage/export") or path.startswith("/api/attribution"):
+        # 2. Exclude Usage Export, Attribution and Finance Analysis (internal/admin routes)
+        if (
+            path.startswith("/api/usage/export")
+            or path.startswith("/api/attribution")
+            or path.startswith("/api/finance")
+        ):
             response = await call_next(request)
             status_code = response.status_code
             return response
